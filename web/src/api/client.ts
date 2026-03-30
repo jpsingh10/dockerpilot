@@ -51,6 +51,7 @@ export const api = {
       ID: number; name: string; repoUrl: string; branch: string;
       composePath: string; lastStatus: string; lastCommit: string;
       lastDeployedAt: string | null; webhookId: string;
+      stackType: string; localPath: string;
     }>>('/stacks'),
   createStack: (data: { name: string; repoUrl: string; branch: string; composePath: string }) =>
     request('/stacks', { method: 'POST', body: JSON.stringify(data) }),

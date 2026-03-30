@@ -11,6 +11,8 @@ export interface Stack {
   lastCommit: string
   lastDeployedAt: string | null
   webhookId: string
+  stackType: string
+  localPath: string
 }
 
 interface StackState {
