@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/coreos/go-oidc/v3 v3.10.0 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
