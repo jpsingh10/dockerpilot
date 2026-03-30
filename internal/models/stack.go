@@ -24,4 +24,5 @@ type Stack struct {
 	LastCommit     string       `json:"lastCommit"`
 	LastDeployedAt *time.Time   `json:"lastDeployedAt"`
 	WebhookID      string       `gorm:"uniqueIndex" json:"webhookId"`
+	WebhookSecret  string       `json:"-"`
 }
