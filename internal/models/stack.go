@@ -14,6 +14,13 @@ const (
 	StatusPending DeployStatus = "pending"
 )
 
+type StackType string
+
+const (
+	StackTypeGit   StackType = "git"
+	StackTypeLocal StackType = "local"
+)
+
 type Stack struct {
 	gorm.Model
 	Name           string       `gorm:"uniqueIndex;not null" json:"name"`
@@ -25,4 +32,6 @@ type Stack struct {
 	LastDeployedAt *time.Time   `json:"lastDeployedAt"`
 	WebhookID      string       `gorm:"uniqueIndex" json:"webhookId"`
 	WebhookSecret  string       `json:"-"`
+	StackType      StackType    `gorm:"not null;default:'git'" json:"stackType"`
+	LocalPath      string       `json:"localPath"`
 }

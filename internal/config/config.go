@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -16,6 +17,8 @@ type Config struct {
 	OIDCRedirectURL  string
 	RepoBasePath     string
 	WebhookSecret    string
+	StacksDir        string
+	ScanInterval     int
 }
 
 func Load() *Config {
@@ -30,7 +33,17 @@ func Load() *Config {
 		OIDCRedirectURL:  getEnv("OIDC_REDIRECT_URL", "http://localhost:8080/api/v1/auth/oidc/callback"),
 		RepoBasePath:     getEnv("REPO_BASE_PATH", "./repos"),
 		WebhookSecret:    os.Getenv("WEBHOOK_SECRET"),
+		StacksDir:        getEnv("STACKS_DIR", ""),
+		ScanInterval:     parseScanInterval(getEnv("SCAN_INTERVAL", "30")),
 	}
+}
+
+func parseScanInterval(s string) int {
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 30
+	}
+	return v
 }
 
 func getEnv(key, fallback string) string {

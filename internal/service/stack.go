@@ -97,6 +97,9 @@ func (s *StackService) tearDown(ctx context.Context, name, composePath string) e
 }
 
 func (s *StackService) composePath(stack *models.Stack) string {
+	if stack.StackType == models.StackTypeLocal {
+		return filepath.Join(stack.LocalPath, stack.ComposePath)
+	}
 	repoDir := filepath.Join(s.repoBase, stack.Name)
 	return filepath.Join(repoDir, stack.ComposePath)
 }

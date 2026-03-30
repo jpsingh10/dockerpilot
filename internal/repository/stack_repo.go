@@ -48,3 +48,18 @@ func (r *StackRepository) Update(stack *models.Stack) error {
 func (r *StackRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Stack{}, id).Error
 }
+
+func (r *StackRepository) FindByName(name string) (*models.Stack, error) {
+	var stack models.Stack
+	err := r.db.Where("name = ?", name).First(&stack).Error
+	if err != nil {
+		return nil, err
+	}
+	return &stack, nil
+}
+
+func (r *StackRepository) FindByStackType(stackType models.StackType) ([]models.Stack, error) {
+	var stacks []models.Stack
+	err := r.db.Where("stack_type = ?", stackType).Find(&stacks).Error
+	return stacks, err
+}

@@ -43,6 +43,15 @@ func main() {
 	hub := ws.NewHub()
 	gitopsWorker := service.NewGitOpsWorker(stackRepo, stackSvc, hub, cfg.RepoBasePath)
 
+	var scannerCancel context.CancelFunc
+	if cfg.StacksDir != "" {
+		scanner := service.NewStackScanner(stackRepo, cfg.StacksDir, cfg.ScanInterval)
+		var ctx context.Context
+		ctx, scannerCancel = context.WithCancel(context.Background())
+		go scanner.Start(ctx)
+		log.Printf("Stack scanner watching: %s (interval: %ds)", cfg.StacksDir, cfg.ScanInterval)
+	}
+
 	authHandler := handler.NewAuthHandler(authService, oidcService)
 	containerHandler := handler.NewContainerHandler(dockerMgr)
 	stackHandler := handler.NewStackHandler(stackSvc, gitopsWorker)
@@ -66,5 +75,8 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+	if scannerCancel != nil {
+		scannerCancel()
+	}
 	log.Println("shutting down server...")
 }
