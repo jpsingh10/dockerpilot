@@ -1,0 +1,11 @@
+.git
+.env
+data/
+repos/
+web/node_modules/
+bin/
+*.exe
+.idea/
+.vscode/
+.claude/
+GEMINI.md

@@ -1,0 +1,19 @@
+services:
+  dockerpilot:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockerpilot-data:/app/data
+      - ${STACKS_DIR:-./stacks}:/stacks
+    environment:
+      - PORT=8080
+      - DB_PATH=/app/data/dockerpilot.db
+      - STACKS_DIR=/stacks
+      - REPO_BASE_PATH=/app/repos
+    group_add:
+      - "${DOCKER_GID:-999}"
+
+volumes:
+  dockerpilot-data:
