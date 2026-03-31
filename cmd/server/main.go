@@ -56,10 +56,14 @@ func main() {
 	containerHandler := handler.NewContainerHandler(dockerMgr)
 	stackHandler := handler.NewStackHandler(stackSvc, gitopsWorker)
 	wsHandler := handler.NewWSHandler(hub, logMgr, metricCol)
+	imageHandler := handler.NewImageHandler(dockerMgr)
+	volumeHandler := handler.NewVolumeHandler(dockerMgr)
+	networkHandler := handler.NewNetworkHandler(dockerMgr)
+	systemHandler := handler.NewSystemHandler(dockerMgr)
 
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	router := internalrouter.NewRouter(authHandler, containerHandler, stackHandler, wsHandler, authMiddleware)
+	router := internalrouter.NewRouter(authHandler, containerHandler, stackHandler, wsHandler, authMiddleware, imageHandler, volumeHandler, networkHandler, systemHandler)
 
 	os.MkdirAll(cfg.RepoBasePath, 0755)
 

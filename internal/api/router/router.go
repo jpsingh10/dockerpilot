@@ -16,6 +16,10 @@ func NewRouter(
 	stackHandler *handler.StackHandler,
 	wsHandler *handler.WSHandler,
 	authMiddleware *middleware.AuthMiddleware,
+	imageHandler *handler.ImageHandler,
+	volumeHandler *handler.VolumeHandler,
+	networkHandler *handler.NetworkHandler,
+	systemHandler *handler.SystemHandler,
 ) http.Handler {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
@@ -45,6 +49,24 @@ func NewRouter(
 	apiRouter.HandleFunc("/stacks/{id}/deploy", stackHandler.Deploy).Methods("POST")
 	apiRouter.HandleFunc("/stacks/{id}/teardown", stackHandler.TearDown).Methods("POST")
 	apiRouter.HandleFunc("/stacks/{id}", stackHandler.Delete).Methods("DELETE")
+	apiRouter.HandleFunc("/stacks/{id}/compose", stackHandler.GetComposeFile).Methods("GET")
+	apiRouter.HandleFunc("/stacks/{id}/compose", stackHandler.UpdateComposeFile).Methods("PUT")
+
+	apiRouter.HandleFunc("/images", imageHandler.List).Methods("GET")
+	apiRouter.HandleFunc("/images/{id}", imageHandler.Remove).Methods("DELETE")
+	apiRouter.HandleFunc("/images/prune", imageHandler.Prune).Methods("POST")
+
+	apiRouter.HandleFunc("/volumes", volumeHandler.List).Methods("GET")
+	apiRouter.HandleFunc("/volumes", volumeHandler.Create).Methods("POST")
+	apiRouter.HandleFunc("/volumes/{name}", volumeHandler.Remove).Methods("DELETE")
+	apiRouter.HandleFunc("/volumes/prune", volumeHandler.Prune).Methods("POST")
+
+	apiRouter.HandleFunc("/networks", networkHandler.List).Methods("GET")
+	apiRouter.HandleFunc("/networks", networkHandler.Create).Methods("POST")
+	apiRouter.HandleFunc("/networks/{id}", networkHandler.Remove).Methods("DELETE")
+	apiRouter.HandleFunc("/networks/prune", networkHandler.Prune).Methods("POST")
+
+	apiRouter.HandleFunc("/system/info", systemHandler.Info).Methods("GET")
 
 	r.HandleFunc("/api/v1/ws/{containerID}", wsHandler.Stream)
 

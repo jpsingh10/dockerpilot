@@ -104,6 +104,14 @@ func (s *StackService) composePath(stack *models.Stack) string {
 	return filepath.Join(repoDir, stack.ComposePath)
 }
 
+func (s *StackService) ComposePath(id uint) (string, error) {
+	stack, err := s.stackRepo.FindByID(id)
+	if err != nil {
+		return "", err
+	}
+	return s.composePath(stack), nil
+}
+
 func (s *StackService) RepoDir(stack *models.Stack) string {
 	return filepath.Join(s.repoBase, stack.Name)
 }

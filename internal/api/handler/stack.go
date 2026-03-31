@@ -3,6 +3,7 @@ package handler
 import (
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -128,4 +129,48 @@ func (h *StackHandler) Webhook(w http.ResponseWriter, r *http.Request) {
 	}
 	go h.gitopsWorker.HandleWebhook(r.Context(), stack, payload)
 	api.JSON(w, http.StatusAccepted, map[string]string{"status": "accepted"})
+}
+
+func (h *StackHandler) GetComposeFile(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
+	if err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid stack id")
+		return
+	}
+	composePath, err := h.stackSvc.ComposePath(uint(id))
+	if err != nil {
+		api.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+	data, err := os.ReadFile(composePath)
+	if err != nil {
+		api.Error(w, http.StatusInternalServerError, "failed to read compose file: "+err.Error())
+		return
+	}
+	api.JSON(w, http.StatusOK, map[string]string{"content": string(data), "path": composePath})
+}
+
+func (h *StackHandler) UpdateComposeFile(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
+	if err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid stack id")
+		return
+	}
+	var body struct {
+		Content string `json:"content"`
+	}
+	if err := api.DecodeJSON(r, &body); err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	composePath, err := h.stackSvc.ComposePath(uint(id))
+	if err != nil {
+		api.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+	if err := os.WriteFile(composePath, []byte(body.Content), 0644); err != nil {
+		api.Error(w, http.StatusInternalServerError, "failed to write compose file: "+err.Error())
+		return
+	}
+	api.JSON(w, http.StatusOK, map[string]string{"status": "saved"})
 }
