@@ -7,7 +7,8 @@ COPY web/ ./
 RUN npm run build
 
 # Stage 2: Build backend
-FROM golang:1.23-bookworm AS backend
+FROM golang:1.24-bookworm AS backend
+ENV GOTOOLCHAIN=auto
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
