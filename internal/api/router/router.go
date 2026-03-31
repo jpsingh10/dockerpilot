@@ -20,10 +20,12 @@ func NewRouter(
 	volumeHandler *handler.VolumeHandler,
 	networkHandler *handler.NetworkHandler,
 	systemHandler *handler.SystemHandler,
+	userHandler *handler.UserHandler,
 ) http.Handler {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
 
+	// Public routes
 	r.HandleFunc("/api/v1/auth/login", authHandler.Login).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/v1/auth/oidc/redirect", authHandler.OIDCRedirect).Methods("GET")
 	r.HandleFunc("/api/v1/auth/oidc/callback", authHandler.OIDCCallback).Methods("GET")
@@ -34,42 +36,63 @@ func NewRouter(
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	}).Methods("GET")
 
+	// Authenticated routes
 	apiRouter := r.PathPrefix("/api/v1").Subrouter()
 	apiRouter.Use(authMiddleware.Authenticate)
 
+	// Read endpoints — all authenticated users
 	apiRouter.HandleFunc("/auth/me", authHandler.Me).Methods("GET")
 	apiRouter.HandleFunc("/containers", containerHandler.List).Methods("GET")
-	apiRouter.HandleFunc("/containers", containerHandler.Create).Methods("POST")
-	apiRouter.HandleFunc("/containers/{id}/start", containerHandler.Start).Methods("POST")
-	apiRouter.HandleFunc("/containers/{id}/stop", containerHandler.Stop).Methods("POST")
-	apiRouter.HandleFunc("/containers/{id}/restart", containerHandler.Restart).Methods("POST")
-	apiRouter.HandleFunc("/containers/{id}", containerHandler.Remove).Methods("DELETE")
 	apiRouter.HandleFunc("/stacks", stackHandler.List).Methods("GET")
-	apiRouter.HandleFunc("/stacks", stackHandler.Create).Methods("POST")
-	apiRouter.HandleFunc("/stacks/{id}/deploy", stackHandler.Deploy).Methods("POST")
-	apiRouter.HandleFunc("/stacks/{id}/teardown", stackHandler.TearDown).Methods("POST")
-	apiRouter.HandleFunc("/stacks/{id}", stackHandler.Delete).Methods("DELETE")
 	apiRouter.HandleFunc("/stacks/{id}/compose", stackHandler.GetComposeFile).Methods("GET")
-	apiRouter.HandleFunc("/stacks/{id}/compose", stackHandler.UpdateComposeFile).Methods("PUT")
-
 	apiRouter.HandleFunc("/images", imageHandler.List).Methods("GET")
-	apiRouter.HandleFunc("/images/{id}", imageHandler.Remove).Methods("DELETE")
-	apiRouter.HandleFunc("/images/prune", imageHandler.Prune).Methods("POST")
-
 	apiRouter.HandleFunc("/volumes", volumeHandler.List).Methods("GET")
-	apiRouter.HandleFunc("/volumes", volumeHandler.Create).Methods("POST")
-	apiRouter.HandleFunc("/volumes/{name}", volumeHandler.Remove).Methods("DELETE")
-	apiRouter.HandleFunc("/volumes/prune", volumeHandler.Prune).Methods("POST")
-
 	apiRouter.HandleFunc("/networks", networkHandler.List).Methods("GET")
-	apiRouter.HandleFunc("/networks", networkHandler.Create).Methods("POST")
-	apiRouter.HandleFunc("/networks/{id}", networkHandler.Remove).Methods("DELETE")
-	apiRouter.HandleFunc("/networks/prune", networkHandler.Prune).Methods("POST")
-
 	apiRouter.HandleFunc("/system/info", systemHandler.Info).Methods("GET")
 
+	// Write endpoints — admin only
+	adminOnly := func(f http.HandlerFunc) http.Handler {
+		return middleware.AdminOnly(http.HandlerFunc(f))
+	}
+
+	// Containers write
+	apiRouter.Handle("/containers", adminOnly(containerHandler.Create)).Methods("POST")
+	apiRouter.Handle("/containers/{id}/start", adminOnly(containerHandler.Start)).Methods("POST")
+	apiRouter.Handle("/containers/{id}/stop", adminOnly(containerHandler.Stop)).Methods("POST")
+	apiRouter.Handle("/containers/{id}/restart", adminOnly(containerHandler.Restart)).Methods("POST")
+	apiRouter.Handle("/containers/{id}", adminOnly(containerHandler.Remove)).Methods("DELETE")
+
+	// Stacks write
+	apiRouter.Handle("/stacks", adminOnly(stackHandler.Create)).Methods("POST")
+	apiRouter.Handle("/stacks/{id}/deploy", adminOnly(stackHandler.Deploy)).Methods("POST")
+	apiRouter.Handle("/stacks/{id}/teardown", adminOnly(stackHandler.TearDown)).Methods("POST")
+	apiRouter.Handle("/stacks/{id}", adminOnly(stackHandler.Delete)).Methods("DELETE")
+	apiRouter.Handle("/stacks/{id}/compose", adminOnly(stackHandler.UpdateComposeFile)).Methods("PUT")
+
+	// Images write
+	apiRouter.Handle("/images/{id}", adminOnly(imageHandler.Remove)).Methods("DELETE")
+	apiRouter.Handle("/images/prune", adminOnly(imageHandler.Prune)).Methods("POST")
+
+	// Volumes write
+	apiRouter.Handle("/volumes", adminOnly(volumeHandler.Create)).Methods("POST")
+	apiRouter.Handle("/volumes/{name}", adminOnly(volumeHandler.Remove)).Methods("DELETE")
+	apiRouter.Handle("/volumes/prune", adminOnly(volumeHandler.Prune)).Methods("POST")
+
+	// Networks write
+	apiRouter.Handle("/networks", adminOnly(networkHandler.Create)).Methods("POST")
+	apiRouter.Handle("/networks/{id}", adminOnly(networkHandler.Remove)).Methods("DELETE")
+	apiRouter.Handle("/networks/prune", adminOnly(networkHandler.Prune)).Methods("POST")
+
+	// User management — admin only
+	apiRouter.Handle("/users", adminOnly(userHandler.List)).Methods("GET")
+	apiRouter.Handle("/users", adminOnly(userHandler.Create)).Methods("POST")
+	apiRouter.Handle("/users/{id}", adminOnly(userHandler.Update)).Methods("PUT")
+	apiRouter.Handle("/users/{id}", adminOnly(userHandler.Delete)).Methods("DELETE")
+
+	// WebSocket (handles auth separately)
 	r.HandleFunc("/api/v1/ws/{containerID}", wsHandler.Stream)
 
+	// SPA fallback
 	spa := spaHandler{staticPath: "./web/dist", indexPath: "index.html"}
 	r.PathPrefix("/").Handler(spa)
 

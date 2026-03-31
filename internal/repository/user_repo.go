@@ -47,3 +47,13 @@ func (r *UserRepository) Create(user *models.User) error {
 func (r *UserRepository) Update(user *models.User) error {
 	return r.db.Save(user).Error
 }
+
+func (r *UserRepository) FindAll() ([]models.User, error) {
+	var users []models.User
+	err := r.db.Order("created_at desc").Find(&users).Error
+	return users, err
+}
+
+func (r *UserRepository) Delete(id uint) error {
+	return r.db.Delete(&models.User{}, id).Error
+}

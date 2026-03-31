@@ -60,10 +60,11 @@ func main() {
 	volumeHandler := handler.NewVolumeHandler(dockerMgr)
 	networkHandler := handler.NewNetworkHandler(dockerMgr)
 	systemHandler := handler.NewSystemHandler(dockerMgr)
+	userHandler := handler.NewUserHandler(userRepo, authService)
 
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	router := internalrouter.NewRouter(authHandler, containerHandler, stackHandler, wsHandler, authMiddleware, imageHandler, volumeHandler, networkHandler, systemHandler)
+	router := internalrouter.NewRouter(authHandler, containerHandler, stackHandler, wsHandler, authMiddleware, imageHandler, volumeHandler, networkHandler, systemHandler, userHandler)
 
 	os.MkdirAll(cfg.RepoBasePath, 0755)
 
