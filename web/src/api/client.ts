@@ -58,4 +58,59 @@ export const api = {
   deployStack: (id: number) => request('/stacks/' + id + '/deploy', { method: 'POST' }),
   teardownStack: (id: number) => request('/stacks/' + id + '/teardown', { method: 'POST' }),
   deleteStack: (id: number) => request('/stacks/' + id, { method: 'DELETE' }),
+
+  // Images
+  listImages: () => request<Array<{
+    ID: string; Repository: string; Tag: string; Size: string;
+    CreatedAt: string; CreatedSince: string;
+  }>>('/images'),
+  removeImage: (id: string, force = false) =>
+    request('/images/' + encodeURIComponent(id) + '?force=' + force, { method: 'DELETE' }),
+  pruneImages: () => request<{ status: string; output: string }>('/images/prune', { method: 'POST' }),
+
+  // Volumes
+  listVolumes: () => request<Array<{
+    Name: string; Driver: string; Scope: string;
+    Mountpoint: string; CreatedAt: string; Labels: string;
+  }>>('/volumes'),
+  createVolume: (data: { name: string; driver: string }) =>
+    request('/volumes', { method: 'POST', body: JSON.stringify(data) }),
+  removeVolume: (name: string) =>
+    request('/volumes/' + encodeURIComponent(name), { method: 'DELETE' }),
+  pruneVolumes: () => request('/volumes/prune', { method: 'POST' }),
+
+  // Networks
+  listNetworks: () => request<Array<{
+    id: string; name: string; driver: string; scope: string;
+    subnet: string; gateway: string; containers: number;
+  }>>('/networks'),
+  createNetwork: (data: { name: string; driver: string; subnet: string; gateway: string }) =>
+    request('/networks', { method: 'POST', body: JSON.stringify(data) }),
+  removeNetwork: (id: string) =>
+    request('/networks/' + id, { method: 'DELETE' }),
+  pruneNetworks: () => request('/networks/prune', { method: 'POST' }),
+
+  // System
+  systemInfo: () => request<{
+    ServerVersion: string; NCPU: number; MemTotal: number;
+    Images: number; Containers: number;
+    ContainersRunning: number; ContainersStopped: number;
+  }>('/system/info'),
+
+  // Users
+  listUsers: () => request<Array<{
+    ID: number; username: string; email: string; role: string;
+  }>>('/users'),
+  createUser: (data: { username: string; email: string; password: string; role: string }) =>
+    request('/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id: number, data: { email?: string; role?: string; password?: string }) =>
+    request('/users/' + id, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id: number) =>
+    request('/users/' + id, { method: 'DELETE' }),
+
+  // Stack compose file
+  getComposeFile: (id: number) =>
+    request<{ content: string; path: string }>('/stacks/' + id + '/compose'),
+  updateComposeFile: (id: number, content: string) =>
+    request('/stacks/' + id + '/compose', { method: 'PUT', body: JSON.stringify({ content }) }),
 }

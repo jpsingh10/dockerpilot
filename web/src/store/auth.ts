@@ -14,9 +14,11 @@ interface AuthState {
   login: (username: string, password: string) => Promise<void>
   logout: () => void
   checkAuth: () => Promise<void>
+  isAdmin: () => boolean
+  canWrite: () => boolean
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: localStorage.getItem('token'),
   user: null,
   loading: true,
@@ -40,4 +42,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ token: null, user: null, loading: false })
     }
   },
+  isAdmin: () => get().user?.role === 'admin',
+  canWrite: () => get().user?.role === 'admin' || get().user?.role === 'user',
 }))
