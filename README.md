@@ -19,22 +19,26 @@ The frontend is structured around shared primitives rather than page-specific st
 
 ## Screenshots
 
-Add screenshots to `docs/screenshots/` and replace the placeholders below with the actual files you want on GitHub.
+Add screenshots to `docs/screenshots/` and keep the filenames below so the README renders them directly on GitHub.
 
-| Area | Screenshot |
-| --- | --- |
-| Dashboard | `docs/screenshots/dashboard.png` |
-| Containers | `docs/screenshots/containers.png` |
-| Container Detail | `docs/screenshots/container-detail.png` |
-| Stacks | `docs/screenshots/stacks.png` |
-| Settings | `docs/screenshots/settings.png` |
-| Login | `docs/screenshots/login.png` |
-
-You can also embed the images directly in the README once they exist:
-
-```md
-![Dashboard](docs/screenshots/dashboard.png)
-```
+<table>
+  <tr>
+    <td><img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%"></td>
+    <td><img src="docs/screenshots/containers.png" alt="Containers" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/images.png" alt="Images" width="100%"></td>
+    <td><img src="docs/screenshots/networks.png" alt="Networks" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/stacks.png" alt="Stacks" width="100%"></td>
+    <td><img src="docs/screenshots/volumes.png" alt="Volumes" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/settings.png" alt="Settings" width="100%"></td>
+    <td></td>
+  </tr>
+</table>
 
 ## Quick Start
 
