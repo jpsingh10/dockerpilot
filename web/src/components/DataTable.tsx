@@ -46,7 +46,7 @@ export default function DataTable<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 text-gray-400 text-sm">
+      <div className="flex items-center justify-center py-12 text-sm text-[var(--text-muted)]">
         Loading...
       </div>
     )
@@ -56,12 +56,12 @@ export default function DataTable<T extends Record<string, any>>({
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="bg-[#0d1525]">
+          <tr className="table-head">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left text-xs text-gray-400 uppercase tracking-wider font-medium ${
-                  col.sortable ? 'cursor-pointer select-none hover:text-gray-200' : ''
+                className={`px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] ${
+                  col.sortable ? 'cursor-pointer select-none hover:text-[var(--text)]' : ''
                 }`}
                 style={col.width ? { width: col.width } : undefined}
                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -79,7 +79,7 @@ export default function DataTable<T extends Record<string, any>>({
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-gray-500">
+              <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-[var(--text-soft)]">
                 {emptyMessage}
               </td>
             </tr>
@@ -87,13 +87,13 @@ export default function DataTable<T extends Record<string, any>>({
             sorted.map((item) => (
               <tr
                 key={item[keyField]}
-                className={`border-b border-gray-800/50 hover:bg-gray-800/30 ${
+                className={`table-row ${
                   onRowClick ? 'cursor-pointer' : ''
                 }`}
                 onClick={onRowClick ? () => onRowClick(item) : undefined}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-sm text-gray-300">
+                  <td key={col.key} className="px-4 py-3 text-sm text-[var(--text)]">
                     {col.render ? col.render(item) : item[col.key]}
                   </td>
                 ))}

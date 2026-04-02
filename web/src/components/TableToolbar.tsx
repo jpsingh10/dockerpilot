@@ -17,37 +17,37 @@ export default function TableToolbar({
   onRefresh, onPrune, onCreate, extraButtons,
 }: TableToolbarProps) {
   return (
-    <div className="flex items-center justify-between mb-4">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
         {count !== undefined && (
-          <span className="bg-gray-700 text-gray-300 px-2 rounded-full text-xs">{count}</span>
+          <span className="badge badge-neutral">{count}</span>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" />
           <input
             type="text"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-1.5 text-sm text-gray-200 w-64 focus:outline-none focus:border-gray-600"
+            className="input w-64 pl-9 py-2"
           />
         </div>
         {extraButtons}
         {onRefresh && (
-          <button onClick={onRefresh} className="bg-gray-800 text-gray-300 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5">
+          <button onClick={onRefresh} className="btn btn-secondary">
             <RefreshCw size={14} /> Refresh
           </button>
         )}
         {onPrune && (
-          <button onClick={onPrune} className="bg-gray-800 text-gray-300 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5">
+          <button onClick={onPrune} className="btn btn-secondary">
             <Trash2 size={14} /> Prune
           </button>
         )}
         {onCreate && (
-          <button onClick={onCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5">
+          <button onClick={onCreate} className="btn btn-primary">
             <Plus size={14} /> Create
           </button>
         )}

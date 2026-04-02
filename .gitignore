@@ -17,3 +17,7 @@ web/dist/
 .idea/
 .vscode/
 *.swp
+
+plan.md
+*.md
+!README.md

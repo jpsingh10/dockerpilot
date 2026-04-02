@@ -3,7 +3,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6339:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -12,7 +12,7 @@ services:
     image: rediscommander/redis-commander:latest
     restart: unless-stopped
     ports:
-      - "8082:8081"
+      - "8083:8081"
     environment:
       REDIS_HOSTS: local:redis:6379
     depends_on:

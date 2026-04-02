@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ToastContainer } from './components/Toast'
 import { useAuthStore } from './store/auth'
+import { useSettingsStore } from './store/settings'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
@@ -16,6 +18,7 @@ import Settings from './pages/Settings'
 
 export default function App() {
   const { checkAuth } = useAuthStore()
+  const themeMode = useSettingsStore((state) => state.themeMode)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -26,6 +29,10 @@ export default function App() {
     }
     checkAuth()
   }, [checkAuth])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode
+  }, [themeMode])
 
   return (
     <BrowserRouter>
@@ -41,13 +48,9 @@ export default function App() {
           <Route path="/volumes" element={<Volumes />} />
           <Route path="/networks" element={<Networks />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/logs" element={<Containers />} />
-          <Route path="/shell" element={<Containers />} />
-          <Route path="/registry" element={<Settings />} />
-          <Route path="/activity" element={<Dashboard />} />
-          <Route path="/schedules" element={<Settings />} />
         </Route>
       </Routes>
+      <ToastContainer />
     </BrowserRouter>
   )
 }

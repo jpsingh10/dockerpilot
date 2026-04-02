@@ -26,12 +26,14 @@ type ContainerInfo struct {
 }
 
 type CreateContainerRequest struct {
-	Image     string   `json:"image"`
-	Name      string   `json:"name"`
-	Ports     []string `json:"ports"`
-	Volumes   []string `json:"volumes"`
-	Env       []string `json:"env"`
-	ForcePull bool     `json:"forcePull"`
+	Image       string   `json:"image"`
+	Name        string   `json:"name"`
+	Ports       []string `json:"ports"`
+	Volumes     []string `json:"volumes"`
+	Env         []string `json:"env"`
+	ForcePull   bool     `json:"forcePull"`
+	CPULimit    string   `json:"cpuLimit"`
+	MemoryLimit string   `json:"memoryLimit"`
 }
 
 func (d *DockerManager) Ping(ctx context.Context) error {
@@ -132,6 +134,12 @@ func (d *DockerManager) Create(ctx context.Context, req CreateContainerRequest) 
 	for _, e := range req.Env {
 		args = append(args, "-e", e)
 	}
+	if req.CPULimit != "" {
+		args = append(args, "--cpus", req.CPULimit)
+	}
+	if req.MemoryLimit != "" {
+		args = append(args, "--memory", req.MemoryLimit)
+	}
 	args = append(args, req.Image)
 
 	out, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
@@ -164,6 +172,131 @@ func (d *DockerManager) Stats(ctx context.Context, id string) (*ContainerStats, 
 		return nil, fmt.Errorf("parse stats: %w", err)
 	}
 	return &stats, nil
+}
+
+// --- Detailed container types and methods ---
+
+type ContainerDetailed struct {
+	ID        string `json:"ID"`
+	Names     string `json:"Names"`
+	Image     string `json:"Image"`
+	Status    string `json:"Status"`
+	State     string `json:"State"`
+	Ports     string `json:"Ports"`
+	CreatedAt string `json:"CreatedAt"`
+	// Enriched fields
+	Restarts  int    `json:"Restarts"`
+	CPUPerc   string `json:"CPUPerc"`
+	MemUsage  string `json:"MemUsage"`
+	NetIO     string `json:"NetIO"`
+	BlockIO   string `json:"BlockIO"`
+	IPAddress string `json:"IPAddress"`
+	Stack     string `json:"Stack"`
+}
+
+// inspectResult holds the subset of `docker inspect` output we care about.
+type inspectResult struct {
+	RestartCount    int `json:"RestartCount"`
+	NetworkSettings struct {
+		Networks map[string]struct {
+			IPAddress string `json:"IPAddress"`
+		} `json:"Networks"`
+	} `json:"NetworkSettings"`
+	Config struct {
+		Labels map[string]string `json:"Labels"`
+	} `json:"Config"`
+}
+
+func (d *DockerManager) ListContainersDetailed(ctx context.Context) ([]ContainerDetailed, error) {
+	// 1. Get base container list
+	psOut, err := exec.CommandContext(ctx, "docker", "ps", "--all", "--no-trunc",
+		"--format", "{{json .}}").Output()
+	if err != nil {
+		return nil, fmt.Errorf("docker ps: %w", err)
+	}
+
+	var bases []ContainerInfo
+	for _, line := range strings.Split(strings.TrimSpace(string(psOut)), "\n") {
+		if line == "" {
+			continue
+		}
+		var c ContainerInfo
+		if err := json.Unmarshal([]byte(line), &c); err != nil {
+			continue
+		}
+		bases = append(bases, c)
+	}
+
+	// 2. Collect stats for all containers in one shot
+	statsMap := make(map[string]ContainerStats) // keyed by full container ID
+	statsOut, err := exec.CommandContext(ctx, "docker", "stats", "--all", "--no-stream",
+		"--format", "{{json .}}").Output()
+	if err == nil {
+		for _, line := range strings.Split(strings.TrimSpace(string(statsOut)), "\n") {
+			if line == "" {
+				continue
+			}
+			var s ContainerStats
+			if err := json.Unmarshal([]byte(line), &s); err != nil {
+				continue
+			}
+			statsMap[s.ID] = s
+		}
+	}
+
+	// 3. For each container, run docker inspect and merge everything
+	result := make([]ContainerDetailed, 0, len(bases))
+	for _, base := range bases {
+		cd := ContainerDetailed{
+			ID:        base.ID,
+			Names:     base.Names,
+			Image:     base.Image,
+			Status:    base.Status,
+			State:     base.State,
+			Ports:     base.Ports,
+			CreatedAt: base.Created,
+		}
+
+		// docker inspect
+		inspOut, err := exec.CommandContext(ctx, "docker", "inspect", base.ID).Output()
+		if err == nil {
+			var inspList []inspectResult
+			if json.Unmarshal(inspOut, &inspList) == nil && len(inspList) > 0 {
+				insp := inspList[0]
+				cd.Restarts = insp.RestartCount
+				cd.Stack = insp.Config.Labels["com.docker.compose.project"]
+				for _, net := range insp.NetworkSettings.Networks {
+					if net.IPAddress != "" {
+						cd.IPAddress = net.IPAddress
+						break
+					}
+				}
+			}
+		}
+
+		// match stats – docker stats uses a short ID in some versions; try prefix match
+		if s, ok := statsMap[base.ID]; ok {
+			cd.CPUPerc = s.CPUPerc
+			cd.MemUsage = s.MemUsage
+			cd.NetIO = s.NetIO
+			cd.BlockIO = s.BlockIO
+		} else {
+			// fall back to prefix match (stats may return short IDs)
+			for k, s := range statsMap {
+				if strings.HasPrefix(base.ID, k) || strings.HasPrefix(k, base.ID) {
+					cd.CPUPerc = s.CPUPerc
+					cd.MemUsage = s.MemUsage
+					cd.NetIO = s.NetIO
+					cd.BlockIO = s.BlockIO
+					break
+				}
+			}
+		}
+
+		result = append(result, cd)
+	}
+
+	return result, nil
 }
 
 // --- Image types and methods ---
@@ -402,6 +535,12 @@ type DockerInfoResult struct {
 	Containers        int    `json:"Containers"`
 	ContainersRunning int    `json:"ContainersRunning"`
 	ContainersStopped int    `json:"ContainersStopped"`
+}
+
+func (d *DockerManager) SystemPrune(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "docker", "system", "prune", "-af", "--volumes")
+	out, err := cmd.CombinedOutput()
+	return string(out), err
 }
 
 func (d *DockerManager) Info(ctx context.Context) (*DockerInfoResult, error) {

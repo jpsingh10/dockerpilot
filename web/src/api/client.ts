@@ -32,20 +32,27 @@ export const api = {
       method: 'POST', body: JSON.stringify({ username, password }),
     }),
   me: () => request<{ id: number; username: string; role: string }>('/auth/me'),
+
+  // Containers
   listContainers: () =>
     request<Array<{
       ID: string; Names: string; Image: string; Status: string;
       State: string; Ports: string; CreatedAt: string;
+      Restarts: number; CPUPerc: string; MemUsage: string;
+      NetIO: string; BlockIO: string; IPAddress: string; Stack: string;
     }>>('/containers'),
   createContainer: (data: {
     image: string; name: string; ports: string[];
     volumes: string[]; env: string[]; forcePull: boolean;
+    cpuLimit?: string; memoryLimit?: string;
   }) => request<{ id: string }>('/containers', { method: 'POST', body: JSON.stringify(data) }),
   startContainer: (id: string) => request('/containers/' + id + '/start', { method: 'POST' }),
   stopContainer: (id: string) => request('/containers/' + id + '/stop', { method: 'POST' }),
   restartContainer: (id: string) => request('/containers/' + id + '/restart', { method: 'POST' }),
   removeContainer: (id: string, force = false) =>
     request('/containers/' + id + '?force=' + force, { method: 'DELETE' }),
+
+  // Stacks
   listStacks: () =>
     request<Array<{
       ID: number; name: string; repoUrl: string; branch: string;
@@ -96,6 +103,7 @@ export const api = {
     Images: number; Containers: number;
     ContainersRunning: number; ContainersStopped: number;
   }>('/system/info'),
+  systemPrune: () => request<{ output: string }>('/system/prune', { method: 'POST' }),
 
   // Users
   listUsers: () => request<Array<{
@@ -108,9 +116,25 @@ export const api = {
   deleteUser: (id: number) =>
     request('/users/' + id, { method: 'DELETE' }),
 
+  // OIDC Settings
+  getOIDCSettings: () =>
+    request<{ issuer: string; clientId: string; redirectUrl: string; enabled: boolean }>('/settings/oidc'),
+  updateOIDCSettings: (data: { issuer: string; clientId: string; clientSecret: string; redirectUrl: string }) =>
+    request<{ status: string; note: string }>('/settings/oidc', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Git Settings
+  getGitSettings: () =>
+    request<{ repoUrl: string; branch: string; token: string }>('/settings/git'),
+  updateGitSettings: (data: { repoUrl: string; branch: string; token: string }) =>
+    request<{ status: string }>('/settings/git', { method: 'PUT', body: JSON.stringify(data) }),
+
   // Stack compose file
   getComposeFile: (id: number) =>
     request<{ content: string; path: string }>('/stacks/' + id + '/compose'),
   updateComposeFile: (id: number, content: string) =>
     request('/stacks/' + id + '/compose', { method: 'PUT', body: JSON.stringify({ content }) }),
+
+  // SSE deploy stream URL builder (used by EventSource)
+  deployStreamUrl: (id: number) =>
+    `${BASE_URL}/stacks/${id}/deploy/stream`,
 }

@@ -4,6 +4,8 @@ import { useAuthStore } from '../store/auth'
 import DataTable from '../components/DataTable'
 import TableToolbar from '../components/TableToolbar'
 import StatusBadge from '../components/StatusBadge'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToastStore } from '../components/Toast'
 import { Trash2 } from 'lucide-react'
 import type { Column } from '../components/DataTable'
 import type { NetworkInfo } from '../store/networks'
@@ -11,12 +13,29 @@ import type { NetworkInfo } from '../store/networks'
 export default function Networks() {
   const { networks, loading, fetch, create, remove, prune } = useNetworkStore()
   const { canWrite } = useAuthStore()
+  const { addToast } = useToastStore()
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newDriver, setNewDriver] = useState('bridge')
   const [newSubnet, setNewSubnet] = useState('')
   const [newGateway, setNewGateway] = useState('')
+  const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; action: () => void; variant: 'danger' | 'warning' }>({
+    open: false, title: '', message: '', action: () => {}, variant: 'danger',
+  })
+
+  const confirmAction = (title: string, message: string, action: () => void, variant: 'danger' | 'warning' = 'danger') => {
+    setConfirm({ open: true, title, message, action, variant })
+  }
+
+  const doAction = async (action: () => Promise<void>, successMsg: string) => {
+    try {
+      await action()
+      addToast(successMsg, 'success')
+    } catch (err: any) {
+      addToast(err.message, 'error')
+    }
+  }
 
   useEffect(() => {
     fetch()
@@ -49,14 +68,14 @@ export default function Networks() {
       key: 'subnet',
       label: 'Subnet',
       render: (n) => (
-        <span className="font-mono text-xs text-gray-400">{n.subnet || '-'}</span>
+        <span className="font-mono text-xs text-[var(--text-muted)]">{n.subnet || '-'}</span>
       ),
     },
     {
       key: 'gateway',
       label: 'Gateway',
       render: (n) => (
-        <span className="font-mono text-xs text-gray-400">{n.gateway || '-'}</span>
+        <span className="font-mono text-xs text-[var(--text-muted)]">{n.gateway || '-'}</span>
       ),
     },
     {
@@ -74,8 +93,8 @@ export default function Networks() {
       width: '80px',
       render: (n) => (
         <button
-          onClick={() => remove(n.id)}
-          className="p-1.5 rounded hover:bg-gray-700 text-red-400"
+          onClick={() => confirmAction('Delete Network', `Are you sure you want to delete network "${n.name}"?`, () => doAction(() => remove(n.id), 'Network deleted successfully'))}
+          className="rounded p-1.5 text-[var(--danger)] hover:bg-[var(--bg-elevated)]"
           title="Delete"
         >
           <Trash2 size={14} />
@@ -93,26 +112,26 @@ export default function Networks() {
         onSearchChange={setSearch}
         searchPlaceholder="Search networks..."
         onRefresh={fetch}
-        onPrune={canWrite() ? prune : undefined}
+        onPrune={canWrite() ? () => confirmAction('Prune Networks', 'Are you sure you want to remove all unused networks? This cannot be undone.', () => doAction(prune, 'Unused networks pruned successfully'), 'warning') : undefined}
         onCreate={canWrite() ? () => setShowForm(!showForm) : undefined}
       />
       {showForm && (
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 mb-4 flex gap-4 items-end flex-wrap">
+        <div className="surface mb-4 flex flex-wrap items-end gap-4 p-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Name</label>
+            <label className="mb-1 block text-sm text-[var(--text-muted)]">Name</label>
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="input"
               placeholder="my-network"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Driver</label>
+            <label className="mb-1 block text-sm text-[var(--text-muted)]">Driver</label>
             <select
               value={newDriver}
               onChange={(e) => setNewDriver(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="select"
             >
               <option value="bridge">bridge</option>
               <option value="overlay">overlay</option>
@@ -121,32 +140,32 @@ export default function Networks() {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Subnet</label>
+            <label className="mb-1 block text-sm text-[var(--text-muted)]">Subnet</label>
             <input
               value={newSubnet}
               onChange={(e) => setNewSubnet(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="input"
               placeholder="172.20.0.0/16"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Gateway</label>
+            <label className="mb-1 block text-sm text-[var(--text-muted)]">Gateway</label>
             <input
               value={newGateway}
               onChange={(e) => setNewGateway(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="input"
               placeholder="172.20.0.1"
             />
           </div>
           <button
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            className="btn btn-primary"
           >
             Create
           </button>
         </div>
       )}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
+      <div className="table-shell">
         <DataTable
           columns={columns}
           data={filtered}
@@ -155,6 +174,15 @@ export default function Networks() {
           emptyMessage="No networks found"
         />
       </div>
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        confirmLabel={confirm.variant === 'danger' ? 'Remove' : 'Confirm'}
+        confirmVariant={confirm.variant}
+        onConfirm={() => { confirm.action(); setConfirm(c => ({ ...c, open: false })) }}
+        onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+      />
     </div>
   )
 }

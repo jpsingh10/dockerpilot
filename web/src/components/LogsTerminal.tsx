@@ -11,10 +11,15 @@ export default function LogsTerminal({ logs }: { logs: string[] }) {
 
   useEffect(() => {
     if (!terminalRef.current) return
+    const cssVar = (name: string, fallback: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
     const terminal = new Terminal({
-      theme: { background: '#0a0a0a', foreground: '#e5e5e5' },
+      theme: {
+        background: cssVar('--surface', '#1a1f2b'),
+        foreground: cssVar('--text', '#eef2f7'),
+      },
       fontSize: 13,
-      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+      fontFamily: "'IBM Plex Mono', 'JetBrains Mono', monospace",
       convertEol: true,
       disableStdin: true,
       scrollback: 5000,
@@ -39,5 +44,5 @@ export default function LogsTerminal({ logs }: { logs: string[] }) {
     lastIndexRef.current = logs.length
   }, [logs])
 
-  return <div ref={terminalRef} className="h-[400px] bg-[#0a0a0a] rounded-lg overflow-hidden border border-gray-800" />
+  return <div ref={terminalRef} className="surface h-[400px] overflow-hidden" />
 }

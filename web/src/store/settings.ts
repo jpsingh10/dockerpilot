@@ -5,6 +5,7 @@ export interface AppSettings {
   timeFormat: '24h' | '12h'
   confirmDestructive: boolean
   logBufferSize: number
+  themeMode: 'dark' | 'light'
 }
 
 const STORAGE_KEY = 'dockerpilot-settings'
@@ -22,6 +23,7 @@ const defaultSettings: AppSettings = {
   timeFormat: '24h',
   confirmDestructive: true,
   logBufferSize: 1000,
+  themeMode: 'dark',
 }
 
 interface SettingsState extends AppSettings {
@@ -39,6 +41,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         timeFormat: next.timeFormat,
         confirmDestructive: next.confirmDestructive,
         logBufferSize: next.logBufferSize,
+        themeMode: next.themeMode,
       }))
       return patch
     }),

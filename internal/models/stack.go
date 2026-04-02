@@ -30,7 +30,7 @@ type Stack struct {
 	LastStatus     DeployStatus `gorm:"default:'pending'" json:"lastStatus"`
 	LastCommit     string       `json:"lastCommit"`
 	LastDeployedAt *time.Time   `json:"lastDeployedAt"`
-	WebhookID      string       `gorm:"uniqueIndex" json:"webhookId"`
+	WebhookID      string       `gorm:"index" json:"webhookId"`
 	WebhookSecret  string       `json:"-"`
 	StackType      StackType    `gorm:"not null;default:'git'" json:"stackType"`
 	LocalPath      string       `json:"localPath"`

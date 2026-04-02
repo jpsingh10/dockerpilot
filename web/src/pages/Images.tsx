@@ -3,6 +3,8 @@ import { useImageStore } from '../store/images'
 import { useAuthStore } from '../store/auth'
 import DataTable from '../components/DataTable'
 import TableToolbar from '../components/TableToolbar'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToastStore } from '../components/Toast'
 import { Trash2 } from 'lucide-react'
 import type { Column } from '../components/DataTable'
 import type { ImageInfo } from '../store/images'
@@ -10,7 +12,24 @@ import type { ImageInfo } from '../store/images'
 export default function Images() {
   const { images, loading, fetch, remove, prune } = useImageStore()
   const { canWrite } = useAuthStore()
+  const { addToast } = useToastStore()
   const [search, setSearch] = useState('')
+  const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; action: () => void; variant: 'danger' | 'warning' }>({
+    open: false, title: '', message: '', action: () => {}, variant: 'danger',
+  })
+
+  const confirmAction = (title: string, message: string, action: () => void, variant: 'danger' | 'warning' = 'danger') => {
+    setConfirm({ open: true, title, message, action, variant })
+  }
+
+  const doAction = async (action: () => Promise<void>, successMsg: string) => {
+    try {
+      await action()
+      addToast(successMsg, 'success')
+    } catch (err: any) {
+      addToast(err.message, 'error')
+    }
+  }
 
   useEffect(() => {
     fetch()
@@ -25,24 +44,20 @@ export default function Images() {
       key: 'Repository',
       label: 'Repository',
       sortable: true,
-      render: (img) => <span className="text-gray-200">{img.Repository}</span>,
+      render: (img) => <span className="text-[var(--text)]">{img.Repository}</span>,
     },
     {
       key: 'Tag',
       label: 'Tag',
       sortable: true,
       render: (img) => (
-        <span className="bg-blue-900/40 text-blue-400 rounded text-xs px-2 py-0.5">
+        <span className="badge badge-neutral">
           {img.Tag}
         </span>
       ),
     },
     { key: 'Size', label: 'Size', sortable: true },
-    {
-      key: 'CreatedSince',
-      label: 'Updated',
-      sortable: true,
-    },
+    { key: 'CreatedSince', label: 'Updated', sortable: true },
   ]
 
   if (canWrite()) {
@@ -52,8 +67,8 @@ export default function Images() {
       width: '80px',
       render: (img) => (
         <button
-          onClick={() => remove(img.ID)}
-          className="p-1.5 rounded hover:bg-gray-700 text-red-400"
+          onClick={() => confirmAction('Delete Image', `Are you sure you want to delete image ${img.Repository}:${img.Tag}?`, () => doAction(() => remove(img.ID), 'Image deleted successfully'))}
+          className="rounded p-1.5 text-[var(--danger)] hover:bg-[var(--bg-elevated)]"
           title="Delete"
         >
           <Trash2 size={14} />
@@ -71,9 +86,9 @@ export default function Images() {
         onSearchChange={setSearch}
         searchPlaceholder="Search images..."
         onRefresh={fetch}
-        onPrune={canWrite() ? prune : undefined}
+        onPrune={canWrite() ? () => confirmAction('Prune Images', 'Are you sure you want to remove all unused images? This cannot be undone.', () => doAction(prune, 'Unused images pruned successfully'), 'warning') : undefined}
       />
-      <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
+      <div className="table-shell">
         <DataTable
           columns={columns}
           data={filtered}
@@ -82,6 +97,15 @@ export default function Images() {
           emptyMessage="No images found"
         />
       </div>
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        confirmLabel={confirm.variant === 'danger' ? 'Remove' : 'Confirm'}
+        confirmVariant={confirm.variant}
+        onConfirm={() => { confirm.action(); setConfirm(c => ({ ...c, open: false })) }}
+        onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+      />
     </div>
   )
 }

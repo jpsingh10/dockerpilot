@@ -7,40 +7,38 @@ export default function ContainerCard({ container }: { container: Container }) {
   const isRunning = container.State === 'running'
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+    <div className="surface p-4 transition-colors hover:border-[var(--border-strong)]">
       <div className="flex items-start justify-between mb-3">
         <div>
           <Link to={`/containers/${container.ID}`}
-            className="text-white font-medium hover:text-blue-400 transition-colors">
+            className="font-medium text-[var(--text)] transition-colors hover:text-[var(--primary)]">
             {container.Names}
           </Link>
-          <p className="text-xs text-gray-500 mt-0.5">{container.ID.slice(0, 12)}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-soft)]">{container.ID.slice(0, 12)}</p>
         </div>
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-          isRunning ? 'bg-green-900/50 text-green-400' : 'bg-gray-800 text-gray-400'
-        }`}>
+        <span className={`badge ${isRunning ? 'badge-success' : 'badge-neutral'}`}>
           {container.State}
         </span>
       </div>
-      <div className="text-sm text-gray-400 space-y-1 mb-4">
-        <p>Image: <span className="text-gray-300">{container.Image}</span></p>
-        <p>Status: <span className="text-gray-300">{container.Status}</span></p>
-        {container.Ports && <p className="truncate">Ports: <span className="text-gray-300">{container.Ports}</span></p>}
+      <div className="mb-4 space-y-1 text-sm text-[var(--text-muted)]">
+        <p>Image: <span className="text-[var(--text)]">{container.Image}</span></p>
+        <p>Status: <span className="text-[var(--text)]">{container.Status}</span></p>
+        {container.Ports && <p className="truncate">Ports: <span className="text-[var(--text)]">{container.Ports}</span></p>}
       </div>
       <div className="flex gap-2">
         {!isRunning ? (
-          <button onClick={() => start(container.ID)} className="flex items-center gap-1 px-2 py-1 bg-green-900/30 text-green-400 rounded-lg text-xs hover:bg-green-900/50">
+          <button onClick={() => start(container.ID)} className="btn btn-secondary px-2 py-1 text-xs">
             <Play size={12} /> Start
           </button>
         ) : (
-          <button onClick={() => stop(container.ID)} className="flex items-center gap-1 px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded-lg text-xs hover:bg-yellow-900/50">
+          <button onClick={() => stop(container.ID)} className="btn btn-secondary px-2 py-1 text-xs">
             <Square size={12} /> Stop
           </button>
         )}
-        <button onClick={() => restart(container.ID)} className="flex items-center gap-1 px-2 py-1 bg-blue-900/30 text-blue-400 rounded-lg text-xs hover:bg-blue-900/50">
+        <button onClick={() => restart(container.ID)} className="btn btn-secondary px-2 py-1 text-xs">
           <RotateCw size={12} /> Restart
         </button>
-        <button onClick={() => remove(container.ID)} className="flex items-center gap-1 px-2 py-1 bg-red-900/30 text-red-400 rounded-lg text-xs hover:bg-red-900/50">
+        <button onClick={() => remove(container.ID)} className="btn btn-danger px-2 py-1 text-xs">
           <Trash2 size={12} /> Remove
         </button>
       </div>

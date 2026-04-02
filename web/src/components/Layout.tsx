@@ -1,68 +1,67 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
+import { useSettingsStore } from '../store/settings'
 import StatsBar from './StatsBar'
 import {
-  LayoutDashboard, Box, FileText, Terminal, Layers,
-  ImageIcon, HardDrive, Network, Archive, Activity,
-  Calendar, Settings, LogOut,
+  LayoutDashboard, Box, Layers,
+  ImageIcon, HardDrive, Network, Settings, LogOut,
 } from 'lucide-react'
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/containers', label: 'Containers', icon: Box },
-  { path: '/logs', label: 'Logs', icon: FileText },
-  { path: '/shell', label: 'Shell', icon: Terminal },
   { path: '/stacks', label: 'Stacks', icon: Layers },
   { path: '/images', label: 'Images', icon: ImageIcon },
   { path: '/volumes', label: 'Volumes', icon: HardDrive },
   { path: '/networks', label: 'Networks', icon: Network },
-  { path: '/registry', label: 'Registry', icon: Archive },
-  { path: '/activity', label: 'Activity', icon: Activity },
-  { path: '/schedules', label: 'Schedules', icon: Calendar },
   { path: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function Layout() {
   const { user, logout } = useAuthStore()
+  const { themeMode } = useSettingsStore()
   const location = useLocation()
 
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
   return (
-    <div className="flex h-screen">
-      <aside className="w-56 bg-[#0f1724] flex flex-col shrink-0">
-        <div className="p-4 border-b border-gray-800">
-          <h1 className="text-xl font-bold text-white">DockerPilot</h1>
-          <p className="text-xs text-gray-400 mt-1">Docker Management</p>
+    <div className="app-shell">
+      <aside className="app-sidebar">
+        <div className="border-b border-[var(--border)] px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] text-[var(--primary)]">
+              <LayoutDashboard size={18} />
+            </div>
+            <div>
+              <h1 className="text-base font-semibold tracking-tight">DockerPilot</h1>
+              <p className="text-xs text-[var(--text-muted)]">Container control plane</p>
+            </div>
+          </div>
         </div>
-        <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto py-2">
           {navItems.map(({ path, label, icon: Icon }) => (
             <Link
               key={path}
               to={path}
-              className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors ${
-                isActive(path)
-                  ? 'bg-blue-600/20 text-blue-400 border-l-2 border-blue-400'
-                  : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border-l-2 border-transparent'
-              }`}
+              className={`nav-link ${isActive(path) ? 'nav-link-active' : ''}`}
             >
               <Icon size={18} />
               {label}
             </Link>
           ))}
         </nav>
-        <div className="p-3 border-t border-gray-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-white">{user?.username}</p>
-              <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs bg-gray-700 text-gray-300">
+        <div className="border-t border-[var(--border)] p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{user?.username}</p>
+              <span className="badge badge-neutral mt-1">
                 {user?.role}
               </span>
             </div>
             <button
               onClick={logout}
-              className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800"
+              className="btn btn-secondary p-2"
               title="Logout"
             >
               <LogOut size={18} />
@@ -70,9 +69,9 @@ export default function Layout() {
           </div>
         </div>
       </aside>
-      <main className="flex-1 flex flex-col overflow-hidden bg-[#0b1120]">
+      <main className="app-main" data-theme={themeMode}>
         <StatsBar />
-        <div className="flex-1 overflow-auto p-6">
+        <div className="app-content">
           <Outlet />
         </div>
       </main>

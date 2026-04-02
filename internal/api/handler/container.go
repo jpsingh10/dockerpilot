@@ -17,13 +17,13 @@ func NewContainerHandler(docker *service.DockerManager) *ContainerHandler {
 }
 
 func (h *ContainerHandler) List(w http.ResponseWriter, r *http.Request) {
-	containers, err := h.docker.ListContainers(r.Context())
+	containers, err := h.docker.ListContainersDetailed(r.Context())
 	if err != nil {
 		api.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if containers == nil {
-		containers = []service.ContainerInfo{}
+		containers = []service.ContainerDetailed{}
 	}
 	api.JSON(w, http.StatusOK, containers)
 }

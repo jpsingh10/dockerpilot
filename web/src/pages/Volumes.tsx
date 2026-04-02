@@ -3,6 +3,8 @@ import { useVolumeStore } from '../store/volumes'
 import { useAuthStore } from '../store/auth'
 import DataTable from '../components/DataTable'
 import TableToolbar from '../components/TableToolbar'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToastStore } from '../components/Toast'
 import { Trash2 } from 'lucide-react'
 import type { Column } from '../components/DataTable'
 import type { VolumeInfo } from '../store/volumes'
@@ -10,10 +12,27 @@ import type { VolumeInfo } from '../store/volumes'
 export default function Volumes() {
   const { volumes, loading, fetch, create, remove, prune } = useVolumeStore()
   const { canWrite } = useAuthStore()
+  const { addToast } = useToastStore()
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newDriver, setNewDriver] = useState('local')
+  const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; action: () => void; variant: 'danger' | 'warning' }>({
+    open: false, title: '', message: '', action: () => {}, variant: 'danger',
+  })
+
+  const confirmAction = (title: string, message: string, action: () => void, variant: 'danger' | 'warning' = 'danger') => {
+    setConfirm({ open: true, title, message, action, variant })
+  }
+
+  const doAction = async (action: () => Promise<void>, successMsg: string) => {
+    try {
+      await action()
+      addToast(successMsg, 'success')
+    } catch (err: any) {
+      addToast(err.message, 'error')
+    }
+  }
 
   useEffect(() => {
     fetch()
@@ -43,7 +62,7 @@ export default function Volumes() {
       label: 'Name',
       sortable: true,
       render: (v) => (
-        <span className="max-w-xs truncate block text-gray-200" title={v.Name}>
+        <span className="max-w-xs block truncate text-[var(--text)]" title={v.Name}>
           {v.Name}
         </span>
       ),
@@ -53,7 +72,7 @@ export default function Volumes() {
     {
       key: 'Labels',
       label: 'Project',
-      render: (v) => <span className="text-gray-400">{parseProject(v.Labels)}</span>,
+      render: (v) => <span className="text-[var(--text-muted)]">{parseProject(v.Labels)}</span>,
     },
     { key: 'CreatedAt', label: 'Created', sortable: true },
   ]
@@ -65,8 +84,8 @@ export default function Volumes() {
       width: '80px',
       render: (v) => (
         <button
-          onClick={() => remove(v.Name)}
-          className="p-1.5 rounded hover:bg-gray-700 text-red-400"
+          onClick={() => confirmAction('Delete Volume', `Are you sure you want to delete volume "${v.Name}"?`, () => doAction(() => remove(v.Name), 'Volume deleted successfully'))}
+          className="rounded p-1.5 text-[var(--danger)] hover:bg-[var(--bg-elevated)]"
           title="Delete"
         >
           <Trash2 size={14} />
@@ -84,37 +103,37 @@ export default function Volumes() {
         onSearchChange={setSearch}
         searchPlaceholder="Search volumes..."
         onRefresh={fetch}
-        onPrune={canWrite() ? prune : undefined}
+        onPrune={canWrite() ? () => confirmAction('Prune Volumes', 'Are you sure you want to remove all unused volumes? This cannot be undone.', () => doAction(prune, 'Unused volumes pruned successfully'), 'warning') : undefined}
         onCreate={canWrite() ? () => setShowForm(!showForm) : undefined}
       />
       {showForm && (
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 mb-4 flex gap-4 items-end">
+        <div className="surface mb-4 flex items-end gap-4 p-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Volume Name</label>
+            <label className="mb-1 block text-sm text-[var(--text-muted)]">Volume Name</label>
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="input"
               placeholder="my-volume"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Driver</label>
+            <label className="mb-1 block text-sm text-[var(--text-muted)]">Driver</label>
             <input
               value={newDriver}
               onChange={(e) => setNewDriver(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="input"
             />
           </div>
           <button
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            className="btn btn-primary"
           >
             Create
           </button>
         </div>
       )}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
+      <div className="table-shell">
         <DataTable
           columns={columns}
           data={filtered}
@@ -123,6 +142,15 @@ export default function Volumes() {
           emptyMessage="No volumes found"
         />
       </div>
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        confirmLabel={confirm.variant === 'danger' ? 'Remove' : 'Confirm'}
+        confirmVariant={confirm.variant}
+        onConfirm={() => { confirm.action(); setConfirm(c => ({ ...c, open: false })) }}
+        onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+      />
     </div>
   )
 }

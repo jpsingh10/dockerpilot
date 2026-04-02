@@ -21,6 +21,7 @@ func NewRouter(
 	networkHandler *handler.NetworkHandler,
 	systemHandler *handler.SystemHandler,
 	userHandler *handler.UserHandler,
+	settingsHandler *handler.SettingsHandler,
 ) http.Handler {
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
@@ -65,6 +66,7 @@ func NewRouter(
 	// Stacks write
 	apiRouter.Handle("/stacks", adminOnly(stackHandler.Create)).Methods("POST")
 	apiRouter.Handle("/stacks/{id}/deploy", adminOnly(stackHandler.Deploy)).Methods("POST")
+	apiRouter.Handle("/stacks/{id}/deploy/stream", adminOnly(stackHandler.DeployStream)).Methods("GET")
 	apiRouter.Handle("/stacks/{id}/teardown", adminOnly(stackHandler.TearDown)).Methods("POST")
 	apiRouter.Handle("/stacks/{id}", adminOnly(stackHandler.Delete)).Methods("DELETE")
 	apiRouter.Handle("/stacks/{id}/compose", adminOnly(stackHandler.UpdateComposeFile)).Methods("PUT")
@@ -82,6 +84,15 @@ func NewRouter(
 	apiRouter.Handle("/networks", adminOnly(networkHandler.Create)).Methods("POST")
 	apiRouter.Handle("/networks/{id}", adminOnly(networkHandler.Remove)).Methods("DELETE")
 	apiRouter.Handle("/networks/prune", adminOnly(networkHandler.Prune)).Methods("POST")
+
+	// Settings — admin only
+	apiRouter.Handle("/settings/oidc", adminOnly(settingsHandler.GetOIDC)).Methods("GET")
+	apiRouter.Handle("/settings/oidc", adminOnly(settingsHandler.UpdateOIDC)).Methods("PUT")
+	apiRouter.Handle("/settings/git", adminOnly(settingsHandler.GetGitSettings)).Methods("GET")
+	apiRouter.Handle("/settings/git", adminOnly(settingsHandler.UpdateGitSettings)).Methods("PUT")
+
+	// System write — admin only
+	apiRouter.Handle("/system/prune", adminOnly(systemHandler.Prune)).Methods("POST")
 
 	// User management — admin only
 	apiRouter.Handle("/users", adminOnly(userHandler.List)).Methods("GET")

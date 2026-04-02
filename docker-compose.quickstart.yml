@@ -1,0 +1,20 @@
+services:
+  dockerpilot:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockerpilot-data:/app/data
+      - dockerpilot-repos:/app/repos
+      - ./stacks:/stacks
+    environment:
+      PORT: "8080"
+      DB_PATH: /app/data/dockerpilot.db
+      STACKS_DIR: /stacks
+      REPO_BASE_PATH: /app/repos
+    restart: unless-stopped
+
+volumes:
+  dockerpilot-data:
+  dockerpilot-repos:

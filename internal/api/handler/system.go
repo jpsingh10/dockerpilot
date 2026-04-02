@@ -23,3 +23,12 @@ func (h *SystemHandler) Info(w http.ResponseWriter, r *http.Request) {
 	}
 	api.JSON(w, http.StatusOK, info)
 }
+
+func (h *SystemHandler) Prune(w http.ResponseWriter, r *http.Request) {
+	output, err := h.docker.SystemPrune(r.Context())
+	if err != nil {
+		api.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	api.JSON(w, http.StatusOK, map[string]string{"output": output})
+}

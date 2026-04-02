@@ -19,18 +19,19 @@ RUN CGO_ENABLED=1 go build -o /app/dockerpilot ./cmd/server
 # Stage 3: Runtime
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates docker.io git \
+    ca-certificates curl git gnupg \
+    && install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update && apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -r -m -s /bin/false dockerpilot \
-    && mkdir -p /app/data /app/repos /stacks \
-    && chown -R dockerpilot:dockerpilot /app /stacks
+RUN mkdir -p /app/data /app/repos /stacks
 
 COPY --from=backend /app/dockerpilot /app/dockerpilot
 COPY --from=frontend /build/web/dist /app/web/dist
-RUN chown -R dockerpilot:dockerpilot /app
+COPY stacks/ /stacks/
 
 WORKDIR /app
-USER dockerpilot
 EXPOSE 8080
 CMD ["/app/dockerpilot"]

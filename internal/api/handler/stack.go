@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -76,6 +77,47 @@ func (h *StackHandler) Deploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	api.JSON(w, http.StatusOK, map[string]string{"status": "deployed"})
+}
+
+func (h *StackHandler) DeployStream(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
+	if err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid stack id")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		api.Error(w, http.StatusInternalServerError, "streaming not supported")
+		return
+	}
+
+	output := make(chan string, 64)
+	var deployErr error
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		deployErr = h.stackSvc.DeployStream(r.Context(), uint(id), output)
+	}()
+
+	for line := range output {
+		fmt.Fprintf(w, "data: %s\n\n", line)
+		flusher.Flush()
+	}
+
+	<-done
+
+	status := "deployed"
+	if deployErr != nil {
+		status = "failed: " + deployErr.Error()
+	}
+	fmt.Fprintf(w, "event: done\ndata: %s\n\n", status)
+	flusher.Flush()
 }
 
 func (h *StackHandler) TearDown(w http.ResponseWriter, r *http.Request) {

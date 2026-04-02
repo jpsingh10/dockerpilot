@@ -24,6 +24,7 @@ func main() {
 
 	userRepo := repository.NewUserRepository(database)
 	stackRepo := repository.NewStackRepository(database)
+	settingsRepo := repository.NewSettingsRepository(database)
 
 	authService := service.NewAuthService(cfg.JWTSecret, userRepo)
 	oidcService, err := service.NewOIDCService(cfg, authService, userRepo)
@@ -61,10 +62,11 @@ func main() {
 	networkHandler := handler.NewNetworkHandler(dockerMgr)
 	systemHandler := handler.NewSystemHandler(dockerMgr)
 	userHandler := handler.NewUserHandler(userRepo, authService)
+	settingsHandler := handler.NewSettingsHandler(settingsRepo, cfg)
 
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	router := internalrouter.NewRouter(authHandler, containerHandler, stackHandler, wsHandler, authMiddleware, imageHandler, volumeHandler, networkHandler, systemHandler, userHandler)
+	router := internalrouter.NewRouter(authHandler, containerHandler, stackHandler, wsHandler, authMiddleware, imageHandler, volumeHandler, networkHandler, systemHandler, userHandler, settingsHandler)
 
 	os.MkdirAll(cfg.RepoBasePath, 0755)
 

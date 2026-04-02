@@ -1,7 +1,5 @@
 services:
   nginx:
     image: nginx:latest
-    restart: unless-stopped
     ports:
-      - 8081:80
-networks: {}
+      - "8082:80"
