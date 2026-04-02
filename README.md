@@ -2,11 +2,12 @@
 
 DockerPilot is a self-hosted Docker management dashboard built with Go, React, Vite, Tailwind, Zustand, and Docker Compose. It provides a single web UI for container, stack, image, volume, network, and system management, with real-time logs, live metrics, GitOps-oriented stack handling, and role-aware actions
 
-## DockerPilot
+# DockerPilot Demo
 
-Try the Demo: dockerpilot.digitalrealm.dev
-username: user
-password: user
+Try the Demo: [dockerpilot.digitalrealm.dev](https://dockerpilot.digitalrealm.dev)
+
+Username: `user`  
+Password: `user`
 
 ## What It Covers
 
